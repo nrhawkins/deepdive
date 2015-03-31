@@ -68,7 +68,7 @@ object CreateDatabaseFiles {
   val livedinFilename = config.getString("lived-in-file")
   val livedinfeaturesFilename = config.getString("lived-in-features-file")
 
-  // creates a StanfordCoreNLP object, with POS tagging, lemmatization, NER, parsing, and coreference resolution 
+  // Create a StanfordCoreNLP object, with POS tagging, lemmatization, NER, parsing, and coreference resolution 
   val props = new Properties()
   props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref")
   val pipeline = new StanfordCoreNLP(props)
@@ -77,32 +77,6 @@ object CreateDatabaseFiles {
   // Main - 
   // -----------------------------------------------------------------
   def main(args: Array[String]) {
-
-    val testSentence = "Barack Obama was born in Hawaii awhile back."
-    val document = new Annotation(testSentence)
-    pipeline.annotate(document)
-    val sentencesTest = document.get(classOf[SentencesAnnotation]).asScala.toList
-    
-    sentencesTest.foreach(s => {
-      val tokens = s.get(classOf[TokensAnnotation]).asScala.toList
-      for(token <- tokens){
-        val word = token.get(classOf[TextAnnotation])
-        val lemma = token.get(classOf[LemmaAnnotation])
-        val pos = token.get(classOf[PartOfSpeechAnnotation])
-        val dep = token.get(classOf[CollapsedCCProcessedDependenciesAnnotation])
-        //val dep = token.get(classOf[BasicDependenciesAnnotation])
-        var depText = "" 
-        //println("roots size: " + dep.getFirstRoot().toString)
-        //for (root <- dep.getRoots.asScala)
-        //{  depText = depText + "root" }
-        //for (edge <- dep.edgeListSorted.asScala.toList)
-        //{  depText = depText + edge.getRelation.toString }
-        val ner = token.get(classOf[NamedEntityTagAnnotation])
-        println(word + " " + lemma + " " + pos + " " + depText + " " + ner)
-      }
-    })
-   
-    System.exit(0)
     
     // -------------------------------------------------------
     // Training Source File
@@ -155,26 +129,22 @@ object CreateDatabaseFiles {
     }
 
     val uniqueTrainingSentences = trainingSentences.toSet
-    //val count = new Array[Int](uniqueTrainingSentences.size)
-    //var x = uniqueTrainingSentences.zip(count).toMap
     var numDupesTrainingSentences = collection.mutable.Map[TrainingSentence, Int]().withDefaultValue(0)
     for(ts <- uniqueTrainingSentences){
       numDupesTrainingSentences.update(ts, numDupesTrainingSentences(ts))
     }
     
-    println("pairs size: " + numDupesTrainingSentences.size)
-    
-    println("trainingSentences size: " + trainingSentences.size)    
-    println("uniqueTrainingSentences size: " + uniqueTrainingSentences.size)
-    
-    //var trainingSentencesCount = trainingSentences
-    
     val sentenceIds = for( ts <- trainingSentences) yield {
       ts.sentId
     }
     
+    println("numDupesTrainingSentences size: " + numDupesTrainingSentences.size)
+    println("trainingSentences size: " + trainingSentences.size)    
+    println("uniqueTrainingSentences size: " + uniqueTrainingSentences.size)
     println("number of sentences: " + sentenceIds.size)
     println("number of unique sentences: " + sentenceIds.toSet.size)    
+
+    System.exit(0)
     
     // -------------------------------------------------------
     // Sentences Source File
@@ -291,7 +261,56 @@ object CreateDatabaseFiles {
     
     println("sentencesNoDupes size: " + sentencesNoDupes.size)
     
-    //sentencesNoDupes.foreach(s => )
+    sentencesNoDupes.foreach(s => {
+
+      // ------------------
+      // write features
+      // ------------------
+      val relationId = s.sentId + "-" + s.arg1 + "-" + s.arg2
+              
+        val features = s.features.split("\t")
+        features.foreach(f => {
+          livedinfeatures.append(relationId + "\t")     
+          livedinfeatures.append(f + "\n")  
+          }
+        )
+        
+        // ------------------
+        // process sentence
+        // ------------------
+        val document = new Annotation(s.sentence)
+        pipeline.annotate(document)
+        val sentence = document.get(classOf[SentencesAnnotation]).asScala.toList(0)
+        val tokens = sentence.get(classOf[TokensAnnotation]).asScala.toList
+        val word = for(token <- tokens) yield { token.get(classOf[TextAnnotation]) }.mkString(",")
+        val lemma = for(token <- tokens) yield { token.get(classOf[LemmaAnnotation]) }.mkString(",")
+        val pos = for(token <- tokens) yield { token.get(classOf[PartOfSpeechAnnotation]) }.mkString(",")
+        val ner = for(token <- tokens) yield { token.get(classOf[NamedEntityTagAnnotation]) }.mkString(",")      
+        val dep = sentence.get(classOf[CollapsedCCProcessedDependenciesAnnotation])
+        var depText = ""
+        for (root <- dep.getRoots.asScala){
+          depText = "root(ROOT-0, " + root.word + "-" + root.index() + ")"
+        }
+        for (edge <- dep.edgeListSorted.asScala){
+          depText = depText + ", " + edge.getRelation().toString + "(" + edge.getSource().word() + "-" + 
+          edge.getSource().index() + ", " + edge.getTarget().word() + "-" + edge.getTarget().index + ")"
+        }        
+        
+        // -----------------
+        // write sentence
+        // -----------------
+        sentences.append(s.sentId + "\t" + s.sentence + "\t")
+        //sentences.append("{\"\",\"\"}" + "\t" + "{\"\",\"\"}" + "\t" + "{\"\",\"\"}" + 
+        //  "\t" + "{\"\",\"\"}" + "\t" + "{\"\",\"\"}" + "\t") 
+        sentences.append("\t" + "{" + word + "}" )
+        sentences.append("\t" + "{" + lemma + "}" )
+        sentences.append("\t" + "{" + pos + "}" )
+        sentences.append("\t" + "{" + depText + "}" )
+        sentences.append("\t" + "{" + ner + "}" )        
+        sentences.append("\t" + s.sentStartOffset + "\t" + s.sentId + "\n" ) 
+      
+      }
+    )
     
     /*sentenceInputLines.foreach(s => {
  
