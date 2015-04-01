@@ -3,6 +3,8 @@ name := "deepdiveSetup"
 version := "1.0"
 
 //scalaVersion := "2.10.2"
+//scalaVersion:="2.9.1"
+//organization:="everpeace.org"
 
 libraryDependencies ++= Seq(
   "com.github.nscala-time" %% "nscala-time" % "1.4.0",
@@ -18,5 +20,6 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-library" % "2.10.2",
   "jp.sf.amateras.solr.scala" %% "solr-scala-client" % "0.0.7",
   "org.apache.commons" % "commons-io" % "1.3.2",
-  "commons-lang" % "commons-lang" % "2.6"
+  "commons-lang" % "commons-lang" % "2.6",
+  "org.scalala" %% "scalala" % "1.0.0.RC2-SNAPSHOT"
 )
