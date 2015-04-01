@@ -172,18 +172,21 @@ object CreateDatabaseFiles {
         
       }).toList
    }        
+   
+    val has_nationality = for (ti <- trainingInput) yield {ti._1}
+    val born_in = for (ti <- trainingInput) yield {ti._2}
+    val lived_in = for (ti <- trainingInput) yield {ti._3}
+    val died_in = for (ti <- trainingInput) yield {ti._4}
+    val traveled_to = for (ti <- trainingInput) yield {ti._5 }
 
     println("trainingInput size: " + trainingInput.size)
+    println("has_nationality size: " + has_nationality.size)    
+    println("born_in size: " + born_in.size)
+    println("lived_in size: " + lived_in.size)
+    println("died_in size: " + died_in.size)
+    println("traveled_to size: " + traveled_to.size)
     
-    System.exit(0)
-    
-    val has_nationality = Nil
-    val died_in = Nil
-    val lived_in = Nil
-    val born_in = Nil
-    val traveled_to = Nil
-    
-    //println("livedinLines size: " + livedinLines.size)
+    //System.exit(0)
     
     /*val livedinLines = {
      
